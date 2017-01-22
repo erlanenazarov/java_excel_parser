@@ -4,12 +4,14 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import sun.org.mozilla.javascript.json.JsonParser;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 
 public class Parser {
@@ -52,9 +54,32 @@ public class Parser {
         return result;
     }
 
-    public static String getData(String data) {
+    public static void SendData(String path) {
+        Map<String, Object> dict = new HashMap<String, Object>();
+        InputStream in;
+        HSSFWorkbook wb = null;
+        try {
+            in = new FileInputStream(path);
+            wb = new HSSFWorkbook(in);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert wb != null;
+        Sheet sheet = wb.getSheetAt(0);
+        int n = sheet.getLastRowNum();
+        for(int i=1; i < n; ++i) {
+            switch (sheet.getRow(i).getCell(1).getCellType()) {
+                case Cell.CELL_TYPE_STRING:
+                    dict.put(sheet.getRow(i).getCell(0).getStringCellValue(), sheet.getRow(i).getCell(1).getStringCellValue());
+                    break;
+                case Cell.CELL_TYPE_NUMERIC:
+                    dict.put(sheet.getRow(i).getCell(0).getStringCellValue(), sheet.getRow(i).getCell(1).getNumericCellValue());
+                    break;
+            }
+        }
 
-
-        return null;
+        for(String k : dict.keySet()) {
+            System.out.println(dict.get(k));
+        }
     }
 }

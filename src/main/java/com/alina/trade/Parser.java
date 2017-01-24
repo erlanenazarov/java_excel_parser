@@ -1,23 +1,24 @@
 package com.alina.trade;
 
+import jdk.nashorn.internal.ir.debug.JSONWriter;
+import jdk.nashorn.internal.parser.JSONParser;
+import jdk.nashorn.internal.runtime.JSONFunctions;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import com.alina.trade.Trade;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 
 public class Parser {
 
     public static String parse(String path) {
-        String result = "";
+        List<Trade> result = new ArrayList<Trade>();
         InputStream in;
         HSSFWorkbook wb = null;
         try {
@@ -26,60 +27,61 @@ public class Parser {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        int article = 0, title = 1, countType = 2, price = 3, discount = 4, category = 5, tradeCode = 6;
 
         assert wb != null;
         Sheet sheet = wb.getSheetAt(0);
         for (Row row : sheet) {
+            if(row.getRowNum() == 0) {
+                continue;
+            }
+            Trade trade = new Trade();
             for (Cell cell : row) {
                 int cellType = cell.getCellType();
                 switch (cellType) {
                     case Cell.CELL_TYPE_STRING:
-                        result += cell.getStringCellValue() + "=";
+                        if (cell.getColumnIndex() == article) {
+                            trade.article = cell.getStringCellValue();
+                        } else if(cell.getColumnIndex() == title) {
+                            trade.title = cell.getStringCellValue();
+                        } else if(cell.getColumnIndex() == countType) {
+                            trade.countType = cell.getStringCellValue();
+                        } else if(cell.getColumnIndex() == discount) {
+                            trade.discount = cell.getStringCellValue();
+                        } else if(cell.getColumnIndex() == category) {
+                            trade.category = cell.getStringCellValue();
+                        } else if(cell.getColumnIndex() == tradeCode) {
+                            trade.tradeCode = cell.getStringCellValue();
+                        }
                         break;
                     case Cell.CELL_TYPE_NUMERIC:
-                        result += "[" + cell.getNumericCellValue() + "]";
+                        if(cell.getColumnIndex() == price) {
+                            trade.price = cell.getNumericCellValue();
+                        }
                         break;
-
                     case Cell.CELL_TYPE_FORMULA:
-                        result += "[" + cell.getNumericCellValue() + "]";
                         break;
                     default:
-                        result += "|";
                         break;
                 }
             }
-            result += "\n";
+            result.add(trade);
         }
 
-        return result;
+        for(Trade object : result) {
+            System.out.println(
+                    "Article: " + object.article + "\n" +
+                    "Title: " + object.title + "\n" +
+                    "Count Type: " + object.countType + "\n" +
+                    "Price: " + object.price + "\n" +
+                    "Discount: " + object.discount + "\n" +
+                    "category: " + object.category + "\n" +
+                    "Trade Code: " + object.tradeCode + "\n"
+            );
+        }
+
+        return "";
     }
 
-    public static void SendData(String path) {
-        Map<String, Object> dict = new HashMap<String, Object>();
-        InputStream in;
-        HSSFWorkbook wb = null;
-        try {
-            in = new FileInputStream(path);
-            wb = new HSSFWorkbook(in);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        assert wb != null;
-        Sheet sheet = wb.getSheetAt(0);
-        int n = sheet.getLastRowNum();
-        for(int i=1; i < n; ++i) {
-            switch (sheet.getRow(i).getCell(1).getCellType()) {
-                case Cell.CELL_TYPE_STRING:
-                    dict.put(sheet.getRow(i).getCell(0).getStringCellValue(), sheet.getRow(i).getCell(1).getStringCellValue());
-                    break;
-                case Cell.CELL_TYPE_NUMERIC:
-                    dict.put(sheet.getRow(i).getCell(0).getStringCellValue(), sheet.getRow(i).getCell(1).getNumericCellValue());
-                    break;
-            }
-        }
-
-        for(String k : dict.keySet()) {
-            System.out.println(dict.get(k));
-        }
-    }
 }
